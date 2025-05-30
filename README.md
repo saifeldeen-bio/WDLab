@@ -1,7 +1,7 @@
 # WDLab
 WDLab is a practical, example-driven tutorial for learning the Workflow Description Language (WDL) for  bioinformatics workflows
 ## Table of Contents
-1. [Introduction to WDL](#1. Introduction to WDL)  
+1. [Introduction to WDL](#1.-Introduction-to-WDL)  
 2. [Installation with Bioconda](#installation-with-bioconda)  
 3. [Cromwell as an Engine to Run WDL](#cromwell-as-an-engine-to-run-wdl)  
 4. [WDL Syntax Structure and Main Components](#wdl-syntax-structure-and-main-components)  
