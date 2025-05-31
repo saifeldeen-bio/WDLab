@@ -1,5 +1,5 @@
 # WDLab
-WDLab is a practical, example-driven tutorial for learning the Workflow Description Language (WDL) for  bioinformatics workflows
+WDLab is a practical, example-driven crash course to learn the Workflow Description Language (WDL) for bioinformatics workflows development.
 ## Table of Contents
 1. [Introduction to WDL](#1.-Introduction-to-WDL)  
 2. [Installation with Bioconda](#installation-with-bioconda)  
