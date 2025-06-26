@@ -16,9 +16,7 @@ WDLab is a practical, example-driven crash course to learn the Workflow Descript
 6. [Control Structures in WDL](#control-structures-in-wdl)  
    - 6.1 [Scatter](#scatter)  
    - 6.2 [If (Conditional)](#if-conditional)  
-7. [Core Functions in WDL (Resource-Related)](#core-functions-in-wdl-resource-related)  
-   - 7.1 [`runtime` Settings](#runtime-settings)  
-   - 7.2 [Predefined Resource Functions](#predefined-resource-functions)  
+7. [`runtime` Settings](#`runtime`-Settings)  
 8. [Inputs and Outputs in WDL](#inputs-and-outputs-in-wdl)  
    - 8.1 [Task-Level Inputs/Outputs](#task-level-inputsoutputs)  
    - 8.2 [Workflow-Level Inputs/Outputs](#workflow-level-inputsoutputs)  
@@ -27,15 +25,11 @@ WDLab is a practical, example-driven crash course to learn the Workflow Descript
    - 9.2 [Logging Directory and Files](#logging-directory-and-files)  
 10. [JSON Input File Structure](#json-input-file-structure)  
     - 10.1 [Formatting a Valid Inputs JSON](#formatting-a-valid-inputs-json)  
-    - 10.2 [Example: Bioinformatics Inputs JSON](#example-bioinformatics-inputs-json)  
-11. [WDL Tools (`wdltool`, `miniwdl`, etc.)](#wdl-tools-wdltool-miniwdl-etc)  
-    - 11.1 [`wdltool` (OpenWDL)](#wdltool-openwdl)  
-    - 11.2 [`miniWDL`](#miniwdl)  
-    - 11.3 [Additional Utilities](#additional-utilities)  
-12. [Parallelization in WDL and Multi-Task Mode on HPCs](#parallelization-in-wdl-and-multi-task-mode-on-hpcs)  
+    - 10.2 [Example: Bioinformatics Inputs JSON](#example-bioinformatics-inputs-json)   
+11. [Parallelization in WDL and Multi-Task Mode on HPCs](#parallelization-in-wdl-and-multi-task-mode-on-hpcs)  
     - 12.1 [Parallelism via Scatter Blocks](#parallelism-via-scatter-blocks)  
     - 12.2 [Running Cromwell on HPC Backends (SLURM/SGE)](#running-cromwell-on-hpc-backends-slurm-sge)  
-13. [Additional Topics & Tips](#additional-topics--tips)  
+12. [Additional Topics & Tips](#additional-topics--tips)  
 
 ---
 
@@ -78,39 +72,16 @@ Below are steps to install via [Bioconda](https://bioconda.github.io/):
    conda config --add channels defaults
    conda config --add channels bioconda
    conda config --add channels conda-forge
-``
-2. **Install `wdltool` and `miniwdl`**
 
+2. **Install `womtool`**
    ```bash
-   conda install -y wdltool
-   conda install -y miniwdl
+   conda install bioconda::womtool
    ```
 
-3. **Install Cromwell**
-   Cromwell is a Java JAR you can download manually, but Bioconda also packages a wrapper:
-
-   ```bash
-   conda install -y cromwell
-   ```
-
-   * This installs a wrapper script named `cromwell` that invokes the latest stable JAR under the hood.
-   * Alternatively, download directly:
-
-     ```bash
-     wget https://repo1.maven.org/maven2/org/broadinstitute/cromwell/cromwell/75/cromwell-75.jar -O cromwell.jar
-     ```
-
-     (replace `75` with the latest version).
-
+   
 4. **Verify Installation**
 
    ```bash
-   # wdltool
-   wdltool --help
-
-   # miniwdl
-   miniwdl --help
-
    # cromwell (should print usage)
    cromwell --help
    ```
@@ -126,62 +97,22 @@ Below are steps to install via [Bioconda](https://bioconda.github.io/):
 * Can run workflows locally (single-machine), on HPC clusters (SLURM, SGE, PBS), or in cloud environments (Google Cloud, AWS Batch, Azure).
 
 ### 3.1 Downloading and Running Cromwell
-
-1. **Download JAR (if not using Bioconda)**
+1. **Install Cromwell**
+   Cromwell is a Java JAR you can download manually, but Bioconda also packages a wrapper:
 
    ```bash
-   wget https://repo1.maven.org/maven2/org/broadinstitute/cromwell/cromwell/75/cromwell-75.jar -O cromwell.jar
+   conda install -y cromwell
    ```
+
+   * This installs a wrapper script named `cromwell` that invokes the latest stable JAR under the hood.
 
 2. **Run a WDL with Cromwell**
 
    ```bash
    java -jar cromwell.jar run my_workflow.wdl --inputs my_inputs.json
    ```
-
    * This will execute locally, producing an “execution directory” in the same folder (`cromwell-executions/`).
-   * You can optionally specify `-o <backend_conf>.conf` to use a custom backend (e.g., SLURM).
-
-3. **Monitoring**
-
-   * By default, Cromwell prints logs to `stdout`/`stderr`.
-   * For larger jobs, supply a `report` option:
-
-     ```bash
-     java -jar cromwell.jar run my_workflow.wdl \
-       --inputs my_inputs.json \
-       --options cromwell_options.json
-     ```
-   * `cromwell_options.json` can contain keys like `"final_workflow_log_dir"`, `"workflow_max_concurrent"`, etc.
-
-### 3.2 Running Cromwell on an HPC Backend
-
-* Cromwell is highly configurable via a [backend configuration file](https://cromwell.readthedocs.io/en/stable/backends/PBS/).
-* Example snippet for SLURM (in `slurm.conf`):
-
-  ```hocon
-  default {
-    runtime-attributes = "cpu, mem_mb, time, queue"
-    submit = "sbatch --cpus-per-task=${cpu} --mem=${mem_mb} --time=${time} --partition=${queue} --output=${cwd}/slurm-%j.out"
-    kill = "scancel ${job_id}"
-    check-alive = "squeue -j ${job_id}"
-    job-id-regex = "Submitted batch job (\\d+)"
-    queue-commands {
-      query = "sinfo --format=\"%.100P %.100c %.100D\" -h"
-      filter = "grep \"${queue}\""
-    }
-  }
-  ```
-* Launch Cromwell with:
-
-  ```bash
-  java -jar cromwell.jar run my_workflow.wdl \
-    --inputs my_inputs.json \
-    --backend-config slurm.conf
-  ```
-
----
-
+ 
 ## 4. WDL Syntax Structure and Main Components
 
 A WDL script (.wdl) is composed of:
@@ -637,10 +568,7 @@ task annotate_with_snpeff {
 
 ---
 
-## 7. Core Functions in WDL (Resource-Related)
-
-### 7.1 `runtime` Settings
-
+## 7. `runtime` Settings
 * The `runtime` block in each task indicates to the execution engine how to allocate resources:
 
   * **`cpu`**: Number of CPU cores.
@@ -674,41 +602,6 @@ task variant_call {
   }
 }
 ```
-
-### 7.2 Predefined Resource Functions
-
-* `size(file)`: Returns file size in bytes.
-* `read_int(file)`: Reads an integer from a single-line file.
-* `read_string(file)`: Reads a string from a file.
-* `length(array)`: Returns length of an array.
-* `basename(path)`: Returns basename (filename) of a path.
-* `stdout()`, `stderr()`: Capture stdout/stderr as strings.
-
-#### Example: Dynamically Assign Threads Based on FASTQ Size
-
-```wdl
-task dynamic_threads {
-  input {
-    File fastq
-    File ref_fasta
-  }
-  command {
-    bwa mem -t ${ceil(size(fastq) / 1000000000)} ${ref_fasta} ${fastq} > out.sam
-  }
-  output {
-    File sam = "out.sam"
-  }
-  runtime {
-    cpu: ceil(size(fastq) / 1000000000)
-    memory: "8 GB"
-    docker: "biocontainers/bwa:v0.7.17_cv1"
-  }
-}
-```
-
-* In this example, if `fastq` is >1 GB, `threads` = `ceil(size / 1e9)`, e.g., a 3 GB FASTQ → 3 threads.
-
----
 
 ## 8. Inputs and Outputs in WDL
 
@@ -909,54 +802,9 @@ A corresponding `inputs.json`:
 
 ---
 
-## 11. WDL Tools (`wdltool`, `miniwdl`, etc.)
+## 11. Parallelization in WDL and Multi-Task Mode on HPCs
 
-Several utilities help you work with WDL:
-
-### 11.1 `wdltool` (OpenWDL)
-
-* **Install**: `conda install -c bioconda wdltool` or from GitHub Releases.
-* **Features**:
-
-  * **Validation**: `wdltool validate my_workflow.wdl` checks syntax against spec.
-  * **Inputs JSON Generation**:
-
-    ```bash
-    wdltool inputs my_workflow.wdl > my_workflow.inputs.json
-    ```
-
-    This produces a JSON skeleton with all workflow inputs set to `?` or `null`. You then fill in real values.
-  * **Graphviz Visualization**:
-
-    ```bash
-    wdltool graph my_workflow.wdl | dot -Tpng -o workflow_graph.png
-    ```
-
-    Generates a DAG of tasks and calls.
-
-### 11.2 `miniWDL`
-
-* **Install**: `conda install -c bioconda miniwdl`
-* **Features**:
-
-  * **Validation**: `miniwdl check my_workflow.wdl`.
-  * **Dry Run**: `miniwdl run --sleep 0 my_workflow.wdl my_inputs.json --backend local` (shows planned calls, without running).
-  * **Execution**: `miniwdl run my_workflow.wdl my_inputs.json --backend local` (runs similar to Cromwell).
-  * **Auto-Generation of Input JSON**: `miniwdl inputs my_workflow.wdl > inputs.json`.
-
-### 11.3 Additional Utilities
-
-* **`womtool`** (for CWL/WDL interop; come with Cromwell).
-* **`wdl-lint`**: Lints style and enforces best practices.
-* **`dxWDL`**: Native WDL runner on DNAnexus.
-* **`Toil` WDL Runner**: `toil-wdl-runner`.
-* **`Cromshell`**: CLI wrapper around Cromwell for easier monitoring.
-
----
-
-## 12. Parallelization in WDL and Multi-Task Mode on HPCs
-
-### 12.1 Parallelism via Scatter Blocks
+### 11.1 Parallelism via Scatter Blocks
 
 * The simplest form of parallelism in WDL is a `scatter` over an `Array[T]`.
 * Each iteration spins up an independent call to the task(s) inside the block.
@@ -1186,6 +1034,54 @@ Below is a consolidated WDL pipeline to:
 
 ```wdl
 version 1.0
+# ========================
+# Workflow: rna_seq_pipeline
+# ========================
+workflow rna_seq_pipeline {
+  input {
+    Array[File] fastq_R1_list
+    Array[File] fastq_R2_list
+    File star_index_dir
+    File gtf
+    Int threads_trim = 4
+    Int threads_align = 8
+    Int threads_fc = 4
+  }
+
+  scatter (i in range(length(fastq_R1_list))) {
+    call fastp_trim {
+      input:
+        read1 = fastq_R1_list[i],
+        read2 = fastq_R2_list[i]
+    }
+
+    call star_align {
+      input:
+        trimmed_R1 = fastp_trim.trimmed_R1,
+        trimmed_R2 = fastp_trim.trimed_R2,
+        star_index_dir = star_index_dir,
+        threads = threads_align
+    }
+
+    call samtools_index {
+      input:
+        bam = star_align.aligned_bam
+    }
+
+    call featurecounts {
+      input:
+        bam = star_align.aligned_bam,
+        gtf = gtf,
+        threads = threads_fc
+    }
+  }
+
+  output {
+    Array[File] bam_files    = star_align.aligned_bam
+    Array[File] bam_indexes = samtools_index.bai
+    Array[File] count_tables = featurecounts.counts
+  }
+}
 
 # ========================
 # Task: fastp_trim
@@ -1304,54 +1200,6 @@ task featurecounts {
   }
 }
 
-# ========================
-# Workflow: rna_seq_pipeline
-# ========================
-workflow rna_seq_pipeline {
-  input {
-    Array[File] fastq_R1_list
-    Array[File] fastq_R2_list
-    File star_index_dir
-    File gtf
-    Int threads_trim = 4
-    Int threads_align = 8
-    Int threads_fc = 4
-  }
-
-  scatter (i in range(length(fastq_R1_list))) {
-    call fastp_trim {
-      input:
-        read1 = fastq_R1_list[i],
-        read2 = fastq_R2_list[i]
-    }
-
-    call star_align {
-      input:
-        trimmed_R1 = fastp_trim.trimmed_R1,
-        trimmed_R2 = fastp_trim.trimed_R2,
-        star_index_dir = star_index_dir,
-        threads = threads_align
-    }
-
-    call samtools_index {
-      input:
-        bam = star_align.aligned_bam
-    }
-
-    call featurecounts {
-      input:
-        bam = star_align.aligned_bam,
-        gtf = gtf,
-        threads = threads_fc
-    }
-  }
-
-  output {
-    Array[File] bam_files    = star_align.aligned_bam
-    Array[File] bam_indexes = samtools_index.bai
-    Array[File] count_tables = featurecounts.counts
-  }
-}
 ```
 
 #### Example `inputs.json` for RNA-Seq Pipeline
